@@ -59,7 +59,6 @@ Point Point(float a, float b, float c) {
 }
 
 
-
 //****************************************************
 // Global Variables 
 //****************************************************
@@ -92,17 +91,22 @@ void initBezPatches(char* input) {
 	    // Iterate through each Control Point in the Patch
 	    for(int i = 0; i < 4; i++) {
 		for(int j = 0; j < 4; j++) {
-		    		    
+		    float x,y,z;
+		    inpfile >> x;
+		    inpfile >> y;
+		    inpfile >> z; 
 		    
-
-		    		    
+		    Point controlPt = new Point(x,y,z);
+		
+		    // Add current Control Point into current Patch
+		    patch.controlPts[i][j] = controlPt;
 		}	
 	    }
-
+	    // Add Patch to array of Bez Patches
+	    bezPatches[numPatch] = patch;
 	}
-	
     }
-
+    inpfile.close();
 }
 
 //****************************************************
