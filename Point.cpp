@@ -19,6 +19,24 @@ Point::Point(float a, float b, float c) {
 //****************************************************
 // Point Class - Functions
 //****************************************************
+Point Point::add(Point b) {
+    Point p;
+    p.x = this->x + b.x;
+    p.y = this->y + b.y;
+    p.z = this->z + b.z;
+ 
+    return p;
+}
+
+Point Point::scalarMultiply(float c) {
+    Point p;
+    p.x = this->x * c;
+    p.y = this->y * c;
+    p.z = this->z * c;
+
+    return p;
+}
+
 void Point::print() {
     printf("(%3.3f, %3.3f, %3.3f)", this->x, this->y, this->z);
    // std::cout << "(" << this->x << ", " << this->y << ", " << this->z << ")" << std::endl;

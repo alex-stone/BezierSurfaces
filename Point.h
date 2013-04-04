@@ -15,7 +15,10 @@ class Point {
     Point(float a, float b, float c);
 
     // Functions
+    Point add(Point b);
+    Point scalarMultiply(float c);
     void print();
     void printInline();
+
 };
 #endif
