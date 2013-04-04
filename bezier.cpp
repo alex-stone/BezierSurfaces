@@ -141,13 +141,33 @@ void parseCommandArguments(int argc, char* argv[]) {
 //****************************************************
 // Test Functions
 //****************************************************
-void testCommandArguments(char* inputName) {
-    std::cout << "Input File Name: " << inputName << std::endl;
+void testCommandArguments() {
+
+    std::cout <<"*******************************************" << std::endl;
+    std::cout <<"  Command Line Argument - Test Info" << std::endl;
+    std::cout <<"*******************************************" << std::endl;
+    
+    std::cout << "Input File Name: " << inputFile << std::endl;
     std::cout << "Subdivision Type = ";
     if(uniform) {
 	std::cout << "UNIFORM" << std::endl;
     } else {
 	std::cout << "ADAPTIVE" << std::endl;
+    }
+
+    std::cout << std::endl;
+}
+
+void testBezPatch() {
+    std::cout <<"*******************************************" << std::endl;
+    std::cout <<"  Bez Patch File Input  - Test Info" << std::endl;
+    std::cout <<"*******************************************" << std::endl;
+    
+    std::cout << "# of Patches: " << numBezPatches << std::endl;
+    for(int i = 0; i < numBezPatches; i++) {
+	std::cout << "BezPatch #" << i+1 << std::endl;
+	bezPatches[i]->print();
+	std::cout << std::endl;
     }
 }
 
@@ -163,7 +183,8 @@ int main(int argc, char *argv[]) {
     initBezPatches(inputFile);
 
     if(debug) {
-	testCommandArguments(inputFile);
+	testCommandArguments();
+    	testBezPatch();
     }
 }
 
