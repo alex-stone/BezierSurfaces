@@ -20,9 +20,11 @@ Point::Point(float a, float b, float c) {
 // Point Class - Functions
 //****************************************************
 void Point::print() {
-    std::cout << "(" << this->x, ", " << this->y << ", " << this->z << ")" << std::endl;
+    printf("(%3.3f, %3.3f, %3.3f)", this->x, this->y, this->z);
+   // std::cout << "(" << this->x << ", " << this->y << ", " << this->z << ")" << std::endl;
 }
 
 void Point::printInline() {
-    std::cout << "(" << this->x, ", " << this->y << ", " << this->z << ")";
+    printf("(%3.3f, %3.3f, %3.3f)", this->x, this->y, this->z);
+    //std::cout << "(" << this->x << ", " << this->y << ", " << this->z << ")";
 }
