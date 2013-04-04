@@ -1,4 +1,3 @@
-
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -20,7 +19,8 @@
 
 #include <time.h>
 #include <math.h>
-
+#include "BezPatch.h"
+#include "Point.h"
 
 #define PI 3.14159265  // Should be used from mathlib
 inline float sqr(float x) { return x*x; }
@@ -36,38 +36,19 @@ class Viewport {
     int w, h; // width and height
 };
 
-class Point {
-  public:
-    float x, y, z;
-    Point(float a, float b, float c);
-};
-
-class BezPatch {
-  public: 
-    Point *controlPts[4][4];
-};
-
-
-//****************************************************
-// Class Functionality
-//****************************************************
-
-Point::Point(float a, float b, float c) {
-    this->x = a;
-    this->y = b;
-    this->z = c;
-}
-
-
 //****************************************************
 // Global Variables 
 //****************************************************
 Viewport 	viewport;
 int		numBezPatches;
-BezPatch*	bezPatches;
+BezPatch**	bezPatches;
+
+// Command Line Arguments
+char*		inputFile;
 float		subdivParam;		// Step Size in U & V for uniform, OR Error measure for adaptive
 bool		uniform;		// If true, uniform subdivision, else adaptive subdivision.
 bool		debug;
+
 
 //****************************************************
 // loadBezPatches Function
@@ -84,12 +65,12 @@ void initBezPatches(char* input) {
 	inpfile >> numBezPatches;
 		
 	// Create an Array of BezPatches
-	bezPatches = new BezPatch[numBezPatches];	
+	bezPatches = new BezPatch*[numBezPatches];	
 
 	// Iterate through the Patches
 	for(int numPatch = 0; numPatch < numBezPatches; numPatch++) {
 
-	    BezPatch *patch = new BezPatch[numBezPatches];
+	    BezPatch* patch = new BezPatch();
 
 	    // Iterate through each Control Point in the Patch
 	    for(int i = 0; i < 4; i++) {
@@ -99,7 +80,7 @@ void initBezPatches(char* input) {
 		    inpfile >> y;
 		    inpfile >> z; 
 		    
-		    Point *controlPt = new Point(x,y,z);
+		    Point* controlPt = new Point(x,y,z);
 		
 		    // Add current Control Point into current Patch
 		    patch->controlPts[i][j] = controlPt;
@@ -113,6 +94,49 @@ void initBezPatches(char* input) {
 }
 
 
+//****************************************************
+// Parse Command Arguments Function:
+//	- Sets Variables
+//		- inputFile
+//		- Subdivision Paramater
+//		- Uniform Boolean (from -a flag)
+//		- Debug Boolean (from -debug flag)
+//****************************************************
+void parseCommandArguments(int argc, char* argv[]) { 
+    if(argc < 3 || argc > 5) {
+	std::cerr << "Incorrect # of Arguments. Required (1) Input File Name, (2) Subdivision Parameter. Optional Flags: '-a' for adaptive subdivision, '-debug' for Debug print statements" << std::endl;
+	std::exit(1);
+    } else {
+	inputFile = argv[1];
+	subdivParam = atof(argv[2]);
+	debug = false;
+    }
+
+    if(argc == 4) {
+        if(string(argv[3]) == "-a") {
+	    uniform = false;
+	    debug = false;
+	} else {
+	    if(string(argv[3]) == "-debug") {
+		uniform = true;
+		debug = true;
+	    } else {
+		std::cerr << "Incorrect Flags Parameter" << std::endl;
+		std::exit(1);
+	    }
+	}
+    }
+    
+    if(argc == 5) {
+	if(string(argv[3]) == "-a" && string(argv[4]) == "-debug") {
+	    uniform = false;
+	    debug = true;
+	} else {
+	    std::cerr << "Incorrect Flag Parameters" << std::endl;
+	}
+    }
+
+}
 
 //****************************************************
 // Test Functions
@@ -123,9 +147,8 @@ void testCommandArguments(char* inputName) {
     if(uniform) {
 	std::cout << "UNIFORM" << std::endl;
     } else {
-	std::cout << "ADAPTIVE" << std:endl;
+	std::cout << "ADAPTIVE" << std::endl;
     }
-
 }
 
 //****************************************************
@@ -133,49 +156,15 @@ void testCommandArguments(char* inputName) {
 //****************************************************
 int main(int argc, char *argv[]) {
 
-    char* inputFile;
-    debug = false;
-
-    // Read in the Command Line Arguments, and initialize inputFile, subdivParam, and uniform boolean.
-    // If # of arguments is less than 3 it is missing either the input file name, the subdivision parameter or both.
-    if(argc < 3 || argc > 5) {
-	std::cerr << "Incorrect Number of Command Line Arguments: Requires an Input File Name & Subdivision Parameter, with optional flag -a" << std::endl;
-    } else {
-	inputFile = argv[1];
-	subdivParam = arv[2];
-	if (argc == 3) {
-	    uniform = true;
-	} else {
-	    if(argc == 5) {
-		if(argv[4] == "-a" && argv[5] == "-debug") {
-		    uniform = false;
-		    debug = true;
-		} else {
-		    std::cerr << "Malformed Input" << std::endl;
-		} 
-	    } else {
-		if(argv[4] == "-a") {
-		    uniform = true;
-		} else {
-		    if(argv[4] == "-debug") {
-			debug = true;
-			uniform = false;
-		    } else {
-			std::cerr << "Malformed Input" << std::endl;
-		    }
-		}
-	    }
-	}
-    }
-
-    if(debug) {
-	testCommandArguments(inputFile);
-    }
-
+    // Initialize Paramaters: inputFile, subdivParam, uniform, & debug
+    parseCommandArguments(argc, argv);
 
     // Initialize the Bez Patches from Input File
     initBezPatches(inputFile);
 
+    if(debug) {
+	testCommandArguments(inputFile);
+    }
 }
 
 
