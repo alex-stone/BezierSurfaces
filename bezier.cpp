@@ -65,6 +65,9 @@ Point Point(float a, float b, float c) {
 Viewport 	viewport;
 int		numBezPatches;
 BezPatch*	bezPatches;
+char*		inputFile;
+float		subdivParam;		// Step Size in U & V for uniform, OR Error measure for adaptive
+bool		uniform;		// If true, uniform subdivision, else adaptive subdivision.
 
 //****************************************************
 // loadBezPatches Function
@@ -113,6 +116,24 @@ void initBezPatches(char* input) {
 // Main Function
 //****************************************************
 int main(int argc, char *argv[]) {
+
+    // Read in the Command Line Arguments
+    // If # of arguments is less than 3 it is missing either the input file name, the subdivision parameter or both.
+    if(argc < 3 || argc > 4) {
+	std::cerr << "Incorrect Number of Command Line Arguments: Requires an Input File Name & Subdivision Parameter, with optional flag -a" << std::endl;
+    } else {
+	inputFile = argv[1];
+	subdivParam = arv[2];
+   	if (argc == 4) {
+	    uniform = false;
+	} else {
+	    uniform = true;
+	}
+    }
+
+
+    // Initialize the Bez Patches from Input File
+    initBezPatches();
 
 }
 
