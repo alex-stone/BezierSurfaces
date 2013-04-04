@@ -17,5 +17,5 @@ class Point {
     // Functions
     void print();
     void printInline();
-}
+};
 #endif

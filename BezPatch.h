@@ -16,5 +16,5 @@ class BezPatch {
 
     // Functions
     void print();
-}
+};
 #endif
