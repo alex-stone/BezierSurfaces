@@ -47,6 +47,14 @@ Point Point::scalarMultiply(float c) {
     return p;
 }
 
+void Point::normalize() {
+    float length = sqrt((this->x * this->x) + (this->y * this->y) + (this->z * this->z));
+     
+    this->x = x/length;
+    this->y = y/length;
+    this->z = z/length;
+}
+
 void Point::print() {
     printf("(%3.3f, %3.3f, %3.3f)", this->x, this->y, this->z);
    // std::cout << "(" << this->x << ", " << this->y << ", " << this->z << ")" << std::endl;

@@ -18,6 +18,7 @@ class Point {
     Point add(Point b);
     Point scalarMultiply(float c);
     Point cross(Point b);
+    void normalize();
     void print();
     void printInline();
 
