@@ -49,6 +49,73 @@ float		subdivParam;		// Step Size in U & V for uniform, OR Error measure for ada
 bool		uniform;		// If true, uniform subdivision, else adaptive subdivision.
 bool		debug;
 
+// 
+
+//****************************************************
+// Glut Functions
+//****************************************************
+void initScene() {
+    // TODO: /glutC/
+
+}
+
+// Function that does the actual drawing
+void myDisplay() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Make sure transformation is "zero'd"
+    glLoadIdentity();
+
+    // TODO: Add Transformations and Translations to be drawn 
+
+    glFlush();
+    glutSwapBuffers();
+}
+
+void myReshape(int w, int h) {
+    viewport.w = w;
+    viewport.h = h;
+
+    glViewport(0,0,viewport.w,viewport.h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    // TODO: Modify this code from AS1 to work for this 
+    gluOrtho2D(0, viewport.w, 0, viewport.h);
+}
+
+//****************************************************
+// On keyPress:
+//   if key:
+//      's':  Toggle Flat & Smooth Shading
+//      'w':  Toggle Filled & Wire Framing
+//      '+':  Zoom In
+//      '-':  Zoom out
+//      ' ':  Close the window
+//****************************************************
+void keyPress(unsigned char key, int x, int y) {
+   
+    switch(key) {
+    case 's':
+            
+        break;
+    case 'w':
+    
+        break;
+    case '+':
+        
+        break;
+    case '-':
+
+        break;
+    case ' ':
+    
+        break;
+    }
+}
+
+
+
 
 //****************************************************
 // loadBezPatches Function
@@ -135,7 +202,6 @@ void parseCommandArguments(int argc, char* argv[]) {
 	    std::cerr << "Incorrect Flag Parameters" << std::endl;
 	}
     }
-
 }
 
 //****************************************************
@@ -176,6 +242,9 @@ void testBezPatch() {
 //****************************************************
 int main(int argc, char *argv[]) {
 
+    // Initalize GLUT
+    glutInit(&argc, argv);
+
     // Initialize Paramaters: inputFile, subdivParam, uniform, & debug
     parseCommandArguments(argc, argv);
 
@@ -186,6 +255,28 @@ int main(int argc, char *argv[]) {
 	testCommandArguments();
     	testBezPatch();
     }
+
+    // Added GLUT_DEPTH for z-buffer
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+
+    // Initialize the Viewport Size
+    viewport.w = 400;
+    viewport.h = 400;
+
+    // The size and position of the window
+    glutInitWindowSize(viewport.w, viewport.h);
+    glutInitWindowPosition(0,0);
+    glutCreateWindow("CS184 - AS3 Bezier Surfaces");
+
+    initScene();
+    
+    glutDisplayFunc(myDisplay);
+    glutReshapeFunc(myReshape);
+    glutKeyboardFunc(keyPress);
+    glutMainLoop();
+    
+    return 0; 
+
 }
 
 
