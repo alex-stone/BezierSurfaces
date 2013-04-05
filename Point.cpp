@@ -28,6 +28,16 @@ Point Point::add(Point b) {
     return p;
 }
 
+Point Point::cross(Point b) {
+    Point p;
+
+    p.x = (this->y * b.z) - (this->z * b.y);
+    p.y = (this->z * b.x) - (this->x * b.z);
+    p.z = (this->x * b.y) - (this->y * b.x);
+
+    return p;
+}
+
 Point Point::scalarMultiply(float c) {
     Point p;
     p.x = this->x * c;

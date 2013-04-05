@@ -17,6 +17,7 @@ class Point {
     // Functions
     Point add(Point b);
     Point scalarMultiply(float c);
+    Point cross(Point b);
     void print();
     void printInline();
 
