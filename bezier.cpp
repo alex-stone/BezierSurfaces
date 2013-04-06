@@ -42,7 +42,6 @@ class Viewport {
 Viewport 	viewport;
 int		    numBezPatches;
 BezPatch**	bezPatches;
-int         numDiv;
 GLuint*     drawLists;
 
 // Command Line Arguments
@@ -51,19 +50,32 @@ float		subdivParam;		// Step Size in U & V for uniform, OR Error measure for ada
 bool		uniform;		// If true, uniform subdivision, else adaptive subdivision.
 bool		debug;
 
+// OpenGL Perspective Variables
+GLdouble aspectRatio;
+const GLdouble FOV_Y = 45.0;
+const GLdouble Z_NEAR = 1.0;
+const GLdouble Z_FAR = 40.0;
+
+// OpenGL Drawing Variables:
+GLfloat theta;          // Angle on X-axis
+GLfloat phi;            // Angle on Y-Axis
+GLfloat xTranslate;
+GLfloat yTranslate;
+GLfloat zTranslate;
 
 // Debugging Variables
 const bool DRAW_TEST = true;
- 
 
 //****************************************************
 // Glut Functions
 //****************************************************
 void initScene() {
-    // TODO: /glutC/
-    if(debug) {
-        std::cout << "Function: initScene" << std::endl;
-    }
+    theta = 0.0f;
+    phi = 0.0f;
+    xTranslate = 0.0f;
+    yTranslate = 0.0f;
+    zTranslate = -15.0f;       // Set Based on size of Input
+
 
     glEnable(GL_DEPTH_TEST);
     glClearDepth(1.0f);
@@ -72,23 +84,21 @@ void initScene() {
 
 }
 
+//****************************************************
+// reshape viewport if the window is resized
+//****************************************************
 void myReshape(int w, int h) {
-    if(debug) {
-        std::cout << "Function: myReshape" << std::endl; 
-    }
 
     viewport.w = w;
     viewport.h = h;
 
+    aspectRatio = ((GLdouble) w) / ((GLdouble) h);
+    
     glViewport(0,0,viewport.w,viewport.h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    // TODO: Modify this code from AS1 to work for this 
-
-    
-
-    gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 100.0f);
+    gluPerspective(FOV_Y, aspectRatio, Z_NEAR, Z_FAR);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); 
 }
@@ -105,24 +115,51 @@ void myReshape(int w, int h) {
 void keyPress(unsigned char key, int x, int y) {
    
     switch(key) {
-    case 's':
-            
-        break;
-    case 'w':
+        case 's':
+                
+            break;
+        case 'w':
     
-        break;
-    case '+':
+            break;
+        case '+':
         
-        break;
-    case '-':
+            break;
+        case '-':
 
-        break;
-    case ' ':
-        std::exit(1);
-        break;
+            break;
+         case ' ':
+            std::exit(1);
+            break;
     }
 }
 
+//****************************************************
+// Arrow Key Press
+//      
+//****************************************************
+void arrowKeyPress(int key, int x, int y) {
+
+    bool shift = (glutGetModifiers() == GLUT_ACTIVE_SHIFT);
+
+    switch(key) {
+        case 100:       // Left Arrow
+            if(shift) {
+                
+            } else {
+
+            }
+            break;
+        case 101:       // Up Arrow 
+            
+            break;
+        case 102:       // Right Arrow 
+            
+            break;
+        case 103:       // Down Arrow 
+    
+            break;
+    }
+}
 
 //****************************************************
 // BezCurveInterp Function: 
@@ -233,7 +270,6 @@ pair<Point,Point> bezPatchInterp(BezPatch* patch, float u, float v) {
     
     ucurve[3] = bezCurveInterp(tempcurve, v).first;
 
-
     // Evaluate Surface & Derivative for U & V
     VptDeriv = bezCurveInterp(vcurve, v);
     UptDeriv = bezCurveInterp(ucurve, u);
@@ -248,7 +284,6 @@ pair<Point,Point> bezPatchInterp(BezPatch* patch, float u, float v) {
     pointNormal.first = VptDeriv.first;
     pointNormal.second = normal;
 
-    std::cout << "(" << pointNormal.first.x << ", " << pointNormal.first.y << ", " << pointNormal.first.z << ")" << std::endl;
     return pointNormal;
 }
 
@@ -266,7 +301,7 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
     GLuint patchDrawList = glGenLists(1);
 
     // Compute # of subdivisions for step size
-    numDiv = (int)((1.0 + epsilon) / step);
+    int numDiv = (int)((1.0 + epsilon) / step);
 
 
     glNewList(patchDrawList, GL_COMPILE);
@@ -281,13 +316,10 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
         for(int iv = 0; iv < numDiv; iv++) {
             v = iv * step;
 
-
             // Evaluate Surface:
             pointNormal = bezPatchInterp(patch, u, v);
             glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
    
-            //glColor3f(1.0f, 1.0f, 1.0f); 
-
             glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
             glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
    
@@ -299,9 +331,36 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
 
     glEndList();
 
-    std::cout << "Test end of uniform Subdivide" << std::endl;
     return patchDrawList;
 }
+
+//****************************************************
+// uniformSubdividePatch - Uniform Subdivision
+//      Return a Draw List for a given Patch
+//****************************************************
+
+GLuint adaptiveSubdividePatch(BezPatch* patch, float step) {
+    
+
+    return uniformSubdividePatch(patch, step);
+}
+
+
+//****************************************************
+// makeDrawLists
+//      - Create the drawlists from the patches using
+//        either Uniform or Adaptive Subdivision
+//****************************************************
+void makeDrawLists() {
+    for (int i = 0; i < numBezPatches; i++) {
+        if(uniform) {
+            drawLists[i] = uniformSubdividePatch(bezPatches[i], subdivParam);
+        } else {
+            drawLists[i] = adaptiveSubdividePatch(bezPatches[i], subdivParam);
+        }
+    }
+}
+
 
 //****************************************************
 // loadBezPatches Function
@@ -423,65 +482,19 @@ void testBezPatch() {
     }
 }
 
-void testDisplayControlPoints() {
-    
-    std::cout << "Testing Drawing" << std::endl;
-
-    BezPatch* patch;
-
-    glBegin(GL_POINTS);
-
-    for(int i = 0; i < 20; i++) {
-        for(int j = 0; j < 20; j++) {
-            float x = (float)(i - 10) /10;
-            float y = (float)(j - 10) /10;
-            
-            glColor3f(1.0f, 1.0f, 1.0f);
-            glVertex3f(x, y, -1);
-        }
-    }
-    glEnd();
-   /* 
-    for(int i = 0; i < numBezPatches; i++) {
-        for(int j = 0; j < 4; j++) {
-            for(int k = 0; k < 4; k++) {
-                
-                patch = bezPatches[i];
-              
-                GLfloat r = 1.0f;
-                GLfloat g = 0.0f;
-                GLfloat b = 0.0f;
-
-                glColor3f(r,g,b);
-                
-                glVertex3f(patch->controlPts[j][k]->x, patch->controlPts[j][k]->y, patch->controlPts[j][k]->z);
-            }
-        }
-    }
-
-
-    glEnd(); */
-}
-
 // Function that does the actual drawing
 void myDisplay() {
-    if(debug) {
-        std::cout << "MY DISPLAY" << std::endl;
-    }
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
      
     // Make sure transformation is "zero'd"
     glLoadIdentity();
 
-    glTranslatef(0.0f, 0.0f, -10.0f);
+    // Setting Up the Translations for Object 
+    glTranslatef(xTranslate, yTranslate, zTranslate);
 
-    std::cout << "MY DISPLAY" << std::endl;
 
     for(int i = 0; i < numBezPatches; i++) {
-        std::cout << "MyDisplay Test: " << i << std::endl;
-    
-        //glCallList(bezPatches[i]->patchDrawList);
         glCallList(drawLists[i]);
     }
 
@@ -506,7 +519,6 @@ int main(int argc, char *argv[]) {
     // Initialize the Bez Patches from Input File
     initBezPatches(inputFile);
 
-
     // Added GLUT_DEPTH for z-buffer
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH);
 
@@ -526,26 +538,16 @@ int main(int argc, char *argv[]) {
         testBezPatch();
     }
 
-    numDiv = (int)(1.0 + 0.001)/subdivParam;
-    //Point points[numDiv][numDiv];
-
     drawLists = new GLuint[numBezPatches];
 
-    int count = 0;
+    // Create the Draw Lists
+    makeDrawLists();
  
-    // Add the points to the array 
-    for (int i = 0; i < numBezPatches; i++) {
-    
-        std::cout << "Adding Point # " << count << std::endl;
-        //bezPatches[i]->patchDrawList = uniformSubdividePatch(bezPatches[i], subdivParam);
-        drawLists[i] = uniformSubdividePatch(bezPatches[i], subdivParam);
-        std::cout << "Put Draw List # : " << count << " into patchDisplayLists" << std::endl;
-        count++;
-    }
-  
+    // GLUT Function Setup 
     glutDisplayFunc(myDisplay);
     glutReshapeFunc(myReshape);
     glutKeyboardFunc(keyPress);
+    glutSpecialFunc(arrowKeyPress);
     glutMainLoop();
     
     return 0; 
