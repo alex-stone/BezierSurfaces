@@ -60,6 +60,11 @@ void initScene() {
         std::cout << "Function: initScene" << std::endl;
     }
 
+    glEnable(GL_DEPTH_TEST);
+    glClearDepth(1.0f);
+
+    glDepthFunc(GL_LEQUAL);
+
 }
 
 void myReshape(int w, int h) {
@@ -75,7 +80,10 @@ void myReshape(int w, int h) {
     glLoadIdentity();
 
     // TODO: Modify this code from AS1 to work for this 
-    gluOrtho2D(0, viewport.w, 0, viewport.h);
+
+    gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 100.0f);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity(); 
 }
 
 //****************************************************
@@ -119,7 +127,7 @@ void keyPress(unsigned char key, int x, int y) {
 //
 //****************************************************
 pair<Point,Point> bezCurveInterp(Point* curve, float u) {
-    
+   
     // The Return Value - Curve Point & Derivative
     std::pair <Point,Point> pointDerivative;    
 
@@ -138,6 +146,8 @@ pair<Point,Point> bezCurveInterp(Point* curve, float u) {
     // Compute Derivative: (E - D) * 3
     pointDerivative.second = segmentE.add(segmentD.scalarMultiply(-1.0)).scalarMultiply(3);
 
+    std::cout << "(" << pointDerivative.first.x << ", " << pointDerivative.first.y << ", " << pointDerivative.first.z << ")" << std::endl;
+
     return pointDerivative;
 }
 
@@ -148,24 +158,32 @@ pair<Point,Point> bezCurveInterp(Point* curve, float u) {
 //      appropriate V & U Curves
 //****************************************************
 
-Point* getVcurvePoints(BezPatch patch, int n) {
+Point* getVcurvePoints(BezPatch* patch, int n) {
     Point* curve[4];
  
-    curve[0] = patch.controlPts[n][0];
-    curve[1] = patch.controlPts[n][1];
-    curve[2] = patch.controlPts[n][2];
-    curve[3] = patch.controlPts[n][3];
+    curve[0] = patch->controlPts[n][0];
+    curve[1] = patch->controlPts[n][1];
+    curve[2] = patch->controlPts[n][2];
+    curve[3] = patch->controlPts[n][3];
 
+    curve[0]->print();
+    curve[1]->print();
+    curve[2]->print();
+    curve[3]->print();
+    
+
+    std::cout << std::endl;
+    
     return *curve;
 }
 
-Point* getUcurvePoints(BezPatch patch, int n) {
+Point* getUcurvePoints(BezPatch* patch, int n) {
     Point* curve[4];
 
-    curve[0] = patch.controlPts[0][n];
-    curve[1] = patch.controlPts[1][n];
-    curve[2] = patch.controlPts[2][n];
-    curve[3] = patch.controlPts[3][n];
+    curve[0] = patch->controlPts[0][n];
+    curve[1] = patch->controlPts[1][n];
+    curve[2] = patch->controlPts[2][n];
+    curve[3] = patch->controlPts[3][n];
     
     return *curve;
 }
@@ -176,25 +194,74 @@ Point* getUcurvePoints(BezPatch patch, int n) {
 //   - Given a Control Patch and (u,v) values, find
 //      the surface point and normal
 //****************************************************
-pair<Point,Point> bezPatchInterp(BezPatch patch, float u, float v) {
+pair<Point,Point> bezPatchInterp(BezPatch* patch, float u, float v) {
     Point vcurve[4];
     Point ucurve[4];
+    Point tempcurve[4];
 
     std::pair <Point,Point> pointNormal;
     std::pair <Point,Point> VptDeriv;
     std::pair <Point,Point> UptDeriv;
 
     // Build Control Points for Bezier Curve in V
-    vcurve[0] = bezCurveInterp(getVcurvePoints(patch, 0), u).first;
-    vcurve[1] = bezCurveInterp(getVcurvePoints(patch, 1), u).first;
-    vcurve[2] = bezCurveInterp(getVcurvePoints(patch, 2), u).first;
-    vcurve[3] = bezCurveInterp(getVcurvePoints(patch, 3), u).first;
+    
+    tempcurve[0] = *patch->controlPts[0][0];
+    tempcurve[1] = *patch->controlPts[0][1];
+    tempcurve[2] = *patch->controlPts[0][2];
+    tempcurve[3] = *patch->controlPts[0][3];
+    
+    vcurve[0] = bezCurveInterp(tempcurve, u).first;
+    
+    tempcurve[0] = *patch->controlPts[1][0];
+    tempcurve[1] = *patch->controlPts[1][1];
+    tempcurve[2] = *patch->controlPts[1][2];
+    tempcurve[3] = *patch->controlPts[1][3];
+    
+    vcurve[1] = bezCurveInterp(tempcurve, u).first;
+    
+    tempcurve[0] = *patch->controlPts[2][0];
+    tempcurve[1] = *patch->controlPts[2][1];
+    tempcurve[2] = *patch->controlPts[2][2];
+    tempcurve[3] = *patch->controlPts[2][3];
+
+    vcurve[2] = bezCurveInterp(tempcurve, u).first;
+    
+    tempcurve[0] = *patch->controlPts[3][0];
+    tempcurve[1] = *patch->controlPts[3][1];
+    tempcurve[2] = *patch->controlPts[3][2];
+    tempcurve[3] = *patch->controlPts[3][3];
+    
+    vcurve[3] = bezCurveInterp(tempcurve, u).first;
 
     // Build Control Points for Bezier Curve in U
-    ucurve[0] = bezCurveInterp(getUcurvePoints(patch, 0), v).first;
-    ucurve[1] = bezCurveInterp(getUcurvePoints(patch, 1), v).first;
-    ucurve[2] = bezCurveInterp(getUcurvePoints(patch, 2), v).first;
-    ucurve[3] = bezCurveInterp(getUcurvePoints(patch, 3), v).first;
+
+    tempcurve[0] = *patch->controlPts[0][0];
+    tempcurve[1] = *patch->controlPts[1][0];
+    tempcurve[2] = *patch->controlPts[2][0];
+    tempcurve[3] = *patch->controlPts[3][0];
+
+    ucurve[0] = bezCurveInterp(tempcurve, v).first;
+    
+    tempcurve[0] = *patch->controlPts[0][1];
+    tempcurve[1] = *patch->controlPts[1][1];
+    tempcurve[2] = *patch->controlPts[2][1];
+    tempcurve[3] = *patch->controlPts[3][1];
+    
+    ucurve[1] = bezCurveInterp(tempcurve, v).first;
+    
+    tempcurve[0] = *patch->controlPts[0][2];
+    tempcurve[1] = *patch->controlPts[1][2];
+    tempcurve[2] = *patch->controlPts[2][2];
+    tempcurve[3] = *patch->controlPts[3][2];
+
+    ucurve[2] = bezCurveInterp(tempcurve, v).first;
+    
+    tempcurve[0] = *patch->controlPts[0][3];
+    tempcurve[1] = *patch->controlPts[1][3];
+    tempcurve[2] = *patch->controlPts[2][3];
+    tempcurve[3] = *patch->controlPts[3][3];
+    
+    ucurve[3] = bezCurveInterp(tempcurve, v).first;
 
 
     // Evaluate Surface & Derivative for U & V
@@ -211,6 +278,7 @@ pair<Point,Point> bezPatchInterp(BezPatch patch, float u, float v) {
     pointNormal.first = VptDeriv.first;
     pointNormal.second = normal;
 
+    //std::cout << "(" << pointNormal.first.x << ", " << pointNormal.first.y << ", " << pointNormal.first.z << ")" << std::endl;
     return pointNormal;
 }
 
@@ -218,16 +286,18 @@ pair<Point,Point> bezPatchInterp(BezPatch patch, float u, float v) {
 //****************************************************
 // uniformSubdividePatch - Uniform Subdivision
 //****************************************************
-void uniformSubdividePatch(BezPatch patch, float step) {
+void uniformSubdividePatch(BezPatch* patch, float step) {
 
     std::pair <Point,Point> pointNormal;
     float u, v;
-    float epsilon = 0.1;
+    float epsilon = 0.001;
 
     // Compute # of subdivisions for step size
-    float numDiv = (1.0 + epsilon) / step;
+    int numDiv = (1.0 + epsilon) / step;
 
-    // For each Parametric Value of U:
+    glBegin(GL_POINTS);
+
+    // For each Parametric Value of U:      -1 because There is one fewer row of patches.
     for(int iu = 0; iu < numDiv; iu++) {
         u = iu * step;
     
@@ -237,10 +307,15 @@ void uniformSubdividePatch(BezPatch patch, float step) {
 
             // Evaluate Surface:
             pointNormal = bezPatchInterp(patch, u, v);
-              
+            glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
+            glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
+            
+           // glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
 
         }
     }
+
+    glEnd();
 }
 
 //****************************************************
@@ -342,9 +417,9 @@ void testCommandArguments() {
     std::cout << "Input File Name: " << inputFile << std::endl;
     std::cout << "Subdivision Type = ";
     if(uniform) {
-	std::cout << "UNIFORM" << std::endl;
+	    std::cout << "UNIFORM" << std::endl;
     } else {
-	std::cout << "ADAPTIVE" << std::endl;
+	    std::cout << "ADAPTIVE" << std::endl;
     }
 
     std::cout << std::endl;
@@ -357,39 +432,45 @@ void testBezPatch() {
     
     std::cout << "# of Patches: " << numBezPatches << std::endl;
     for(int i = 0; i < numBezPatches; i++) {
-	std::cout << "BezPatch #" << i+1 << std::endl;
-	bezPatches[i]->print();
-	std::cout << std::endl;
+	    std::cout << "BezPatch #" << i+1 << std::endl;
+	    bezPatches[i]->print();
+	    std::cout << std::endl;
     }
 }
 
 void testDisplayControlPoints() {
-    glBegin(GL_POINTS);
     
-    int count = 0;
-
     BezPatch* patch;
 
+    glBegin(GL_POINTS);
+
+    for(int i = 0; i < 20; i++) {
+        for(int j = 0; j < 20; j++) {
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glVertex3f((i-10)/10, (j-10)/10, 1);
+        }
+    }
+    glEnd();
+   /* 
     for(int i = 0; i < numBezPatches; i++) {
         for(int j = 0; j < 4; j++) {
             for(int k = 0; k < 4; k++) {
                 
                 patch = bezPatches[i];
               
-                GLfloat r = 0.0f;
-                GLfloat g = 1.0f;
-                GLfloat b = 1.0f;
+                GLfloat r = 1.0f;
+                GLfloat g = 0.0f;
+                GLfloat b = 0.0f;
 
                 glColor3f(r,g,b);
                 
                 glVertex3f(patch->controlPts[j][k]->x, patch->controlPts[j][k]->y, patch->controlPts[j][k]->z);
-                count++;
             }
         }
     }
 
 
-    glEnd();
+    glEnd(); */
 }
 
 // Function that does the actual drawing
@@ -399,8 +480,13 @@ void myDisplay() {
     // Make sure transformation is "zero'd"
     glLoadIdentity();
 
-    if(debug) {
-        testDisplayControlPoints();
+    testDisplayControlPoints();
+
+    if(false) {
+        for(int i = 0; i < numBezPatches; i++) {
+            uniformSubdividePatch(bezPatches[i], subdivParam);
+
+        }
     }
      
     // TODO: Add Transformations and Translations to be drawn 
@@ -426,7 +512,7 @@ int main(int argc, char *argv[]) {
 
 
     // Added GLUT_DEPTH for z-buffer
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH);
 
     // Initialize the Viewport Size
     viewport.w = 400;
@@ -445,7 +531,11 @@ int main(int argc, char *argv[]) {
         testDisplayControlPoints();
     }
 
-   
+  
+    for (int i = 0; i < numBezPatches; i++) {
+        uniformSubdividePatch(bezPatches[i], subdivParam);
+
+    }
   
     glutDisplayFunc(myDisplay);
     glutReshapeFunc(myReshape);
