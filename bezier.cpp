@@ -237,7 +237,7 @@ void uniformSubdividePatch(BezPatch patch, float step) {
 
             // Evaluate Surface:
             pointNormal = bezPatchInterp(patch, u, v);
-             
+              
 
         }
     }
@@ -366,21 +366,28 @@ void testBezPatch() {
 void testDisplayControlPoints() {
     glBegin(GL_POINTS);
     
+    int count = 0;
+
+    BezPatch* patch;
+
     for(int i = 0; i < numBezPatches; i++) {
         for(int j = 0; j < 4; j++) {
             for(int k = 0; k < 4; k++) {
                 
-                BezPatch* patch = bezPatches[i];
+                patch = bezPatches[i];
               
-                GLfloat r,g,b = 1.0f;
-                
+                GLfloat r = 0.0f;
+                GLfloat g = 1.0f;
+                GLfloat b = 1.0f;
+
                 glColor3f(r,g,b);
                 
                 glVertex3f(patch->controlPts[j][k]->x, patch->controlPts[j][k]->y, patch->controlPts[j][k]->z);
-
+                count++;
             }
         }
     }
+
 
     glEnd();
 }

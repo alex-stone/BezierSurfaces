@@ -9,7 +9,7 @@
 class BezPatch {
   public:
     // Variables
-    Point** controlPts;
+    Point* controlPts[4][4];
 
     // Constructors
     BezPatch();		// Initialize all Control Points to (0,0,0)
