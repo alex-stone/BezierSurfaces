@@ -42,8 +42,8 @@ class Viewport {
 Viewport 	viewport;
 int		    numBezPatches;
 BezPatch**	bezPatches;
-Point**     points;
 int         numDiv;
+GLuint*     drawLists;
 
 // Command Line Arguments
 char*		inputFile;
@@ -88,7 +88,7 @@ void myReshape(int w, int h) {
 
     
 
-    //gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 100.0f);
+    gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 100.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); 
 }
@@ -156,43 +156,6 @@ pair<Point,Point> bezCurveInterp(Point* curve, float u) {
     //std::cout << "(" << pointDerivative.first.x << ", " << pointDerivative.first.y << ", " << pointDerivative.first.z << ")" << std::endl;
 
     return pointDerivative;
-}
-
-
-//****************************************************
-// Helper Functions for BezPatchInterp
-//      Return the Array of 4 points, for the 
-//      appropriate V & U Curves
-//****************************************************
-
-Point* getVcurvePoints(BezPatch* patch, int n) {
-    Point* curve[4];
- 
-    curve[0] = patch->controlPts[n][0];
-    curve[1] = patch->controlPts[n][1];
-    curve[2] = patch->controlPts[n][2];
-    curve[3] = patch->controlPts[n][3];
-
-    curve[0]->print();
-    curve[1]->print();
-    curve[2]->print();
-    curve[3]->print();
-    
-
-    std::cout << std::endl;
-    
-    return *curve;
-}
-
-Point* getUcurvePoints(BezPatch* patch, int n) {
-    Point* curve[4];
-
-    curve[0] = patch->controlPts[0][n];
-    curve[1] = patch->controlPts[1][n];
-    curve[2] = patch->controlPts[2][n];
-    curve[3] = patch->controlPts[3][n];
-    
-    return *curve;
 }
 
 
@@ -292,23 +255,27 @@ pair<Point,Point> bezPatchInterp(BezPatch* patch, float u, float v) {
 
 //****************************************************
 // uniformSubdividePatch - Uniform Subdivision
+//      Return a Draw List for a given Patch
 //****************************************************
-void uniformSubdividePatch(BezPatch* patch, float step) {
+GLuint uniformSubdividePatch(BezPatch* patch, float step) {
 
     std::pair <Point,Point> pointNormal;
     float u, v;
     float epsilon = 0.001;
 
+    GLuint patchDrawList = glGenLists(1);
+
     // Compute # of subdivisions for step size
-//    numDiv = (int)((1.0 + epsilon) / step);
+    numDiv = (int)((1.0 + epsilon) / step);
 
 
-
-    //glBegin(GL_POINTS);
+    glNewList(patchDrawList, GL_COMPILE);
 
     // For each Parametric Value of U:      -1 because There is one fewer row of patches.
     for(int iu = 0; iu < numDiv; iu++) {
         u = iu * step;
+   
+        glBegin(GL_POINTS);
     
         // For each Parametric Value of V:
         for(int iv = 0; iv < numDiv; iv++) {
@@ -317,22 +284,23 @@ void uniformSubdividePatch(BezPatch* patch, float step) {
 
             // Evaluate Surface:
             pointNormal = bezPatchInterp(patch, u, v);
-            //glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
+            glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
    
-            
-            std::cout << "test " << std::endl;        
-            points[iu][iv] = pointNormal.first; 
-            std::cout << "test " << std::endl;        
-     //       glColor3f(1.0f, 1.0f, 1.0f); 
-   //         glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
-   
-///            glVertex3f(0.0f, 0.0f, 0.0f);         
-           // glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
+            //glColor3f(1.0f, 1.0f, 1.0f); 
 
+            glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
+            glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
+   
         }
+
+        glEnd();
     }
 
-    //glEnd();
+
+    glEndList();
+
+    std::cout << "Test end of uniform Subdivide" << std::endl;
+    return patchDrawList;
 }
 
 //****************************************************
@@ -372,7 +340,7 @@ void initBezPatches(char* input) {
 		        }	
 	        }
 	        // Add Patch to array of Bez Patches
-	        bezPatches[numPatch] = patch;
+            bezPatches[numPatch] = patch;
 	    }
     }
     inpfile.close();
@@ -506,33 +474,17 @@ void myDisplay() {
     // Make sure transformation is "zero'd"
     glLoadIdentity();
 
-  //  glBegin(GL_POINTS);
+    glTranslatef(0.0f, 0.0f, -10.0f);
 
     std::cout << "MY DISPLAY" << std::endl;
 
-    if(DRAW_TEST) {
-        testDisplayControlPoints();
+    for(int i = 0; i < numBezPatches; i++) {
+        std::cout << "MyDisplay Test: " << i << std::endl;
+    
+        //glCallList(bezPatches[i]->patchDrawList);
+        glCallList(drawLists[i]);
     }
 
-/*
-    for(int i = 0; i < numDiv ; i++) {
-        for(int j = 0; j < numDiv; j++) {
-            glColor3f(1.0f, 1.0f, 1.0f);
-            std::cout << "Points[0][0] = " << std::endl;
-            points[0][0].print();
-            glVertex3f(points[i][j].x, points[i][j].y, points[i][j].z);
-        }
-    }
-
-    glEnd();
-*/
-    if(debug) {
-        for(int i = 0; i < numBezPatches; i++) {
-     //       uniformSubdividePatch(bezPatches[i], subdivParam);
-        
-
-        }
-    }
      
     // TODO: Add Transformations and Translations to be drawn 
      
@@ -555,7 +507,6 @@ int main(int argc, char *argv[]) {
     initBezPatches(inputFile);
 
 
-
     // Added GLUT_DEPTH for z-buffer
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA | GLUT_DEPTH);
 
@@ -576,23 +527,22 @@ int main(int argc, char *argv[]) {
     }
 
     numDiv = (int)(1.0 + 0.001)/subdivParam;
-    Point points[numDiv][numDiv];
+    //Point points[numDiv][numDiv];
 
-    if(DRAW_TEST) {
-        testDisplayControlPoints();
-    }
+    drawLists = new GLuint[numBezPatches];
 
-/*
     int count = 0;
  
     // Add the points to the array 
     for (int i = 0; i < numBezPatches; i++) {
     
-        std::cout << count << std::endl;
-        uniformSubdividePatch(bezPatches[i], subdivParam);
+        std::cout << "Adding Point # " << count << std::endl;
+        //bezPatches[i]->patchDrawList = uniformSubdividePatch(bezPatches[i], subdivParam);
+        drawLists[i] = uniformSubdividePatch(bezPatches[i], subdivParam);
+        std::cout << "Put Draw List # : " << count << " into patchDisplayLists" << std::endl;
         count++;
     }
- */ 
+  
     glutDisplayFunc(myDisplay);
     glutReshapeFunc(myReshape);
     glutKeyboardFunc(keyPress);

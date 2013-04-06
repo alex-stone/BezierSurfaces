@@ -1,6 +1,7 @@
 #ifndef BEZPATCH_H
 #define BEZPATCH_H
 
+#include <iostream>
 #include "Point.h"
 
 //****************************************************
