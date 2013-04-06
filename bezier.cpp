@@ -146,7 +146,7 @@ pair<Point,Point> bezCurveInterp(Point* curve, float u) {
     // Compute Derivative: (E - D) * 3
     pointDerivative.second = segmentE.add(segmentD.scalarMultiply(-1.0)).scalarMultiply(3);
 
-    std::cout << "(" << pointDerivative.first.x << ", " << pointDerivative.first.y << ", " << pointDerivative.first.z << ")" << std::endl;
+    //std::cout << "(" << pointDerivative.first.x << ", " << pointDerivative.first.y << ", " << pointDerivative.first.z << ")" << std::endl;
 
     return pointDerivative;
 }
@@ -278,7 +278,7 @@ pair<Point,Point> bezPatchInterp(BezPatch* patch, float u, float v) {
     pointNormal.first = VptDeriv.first;
     pointNormal.second = normal;
 
-    //std::cout << "(" << pointNormal.first.x << ", " << pointNormal.first.y << ", " << pointNormal.first.z << ")" << std::endl;
+    std::cout << "(" << pointNormal.first.x << ", " << pointNormal.first.y << ", " << pointNormal.first.z << ")" << std::endl;
     return pointNormal;
 }
 
