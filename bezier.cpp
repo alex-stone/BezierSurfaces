@@ -42,6 +42,8 @@ class Viewport {
 Viewport 	viewport;
 int		    numBezPatches;
 BezPatch**	bezPatches;
+Point**     points;
+int         numDiv;
 
 // Command Line Arguments
 char*		inputFile;
@@ -49,7 +51,10 @@ float		subdivParam;		// Step Size in U & V for uniform, OR Error measure for ada
 bool		uniform;		// If true, uniform subdivision, else adaptive subdivision.
 bool		debug;
 
-// 
+
+// Debugging Variables
+const bool DRAW_TEST = true;
+ 
 
 //****************************************************
 // Glut Functions
@@ -81,7 +86,9 @@ void myReshape(int w, int h) {
 
     // TODO: Modify this code from AS1 to work for this 
 
-    gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 100.0f);
+    
+
+    //gluPerspective(45.0f, (GLfloat)w / (GLfloat)h, 0.1f, 100.0f);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); 
 }
@@ -293,9 +300,11 @@ void uniformSubdividePatch(BezPatch* patch, float step) {
     float epsilon = 0.001;
 
     // Compute # of subdivisions for step size
-    int numDiv = (1.0 + epsilon) / step;
+//    numDiv = (int)((1.0 + epsilon) / step);
 
-    glBegin(GL_POINTS);
+
+
+    //glBegin(GL_POINTS);
 
     // For each Parametric Value of U:      -1 because There is one fewer row of patches.
     for(int iu = 0; iu < numDiv; iu++) {
@@ -305,17 +314,25 @@ void uniformSubdividePatch(BezPatch* patch, float step) {
         for(int iv = 0; iv < numDiv; iv++) {
             v = iv * step;
 
+
             // Evaluate Surface:
             pointNormal = bezPatchInterp(patch, u, v);
-            glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
-            glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
+            //glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
+   
             
+            std::cout << "test " << std::endl;        
+            points[iu][iv] = pointNormal.first; 
+            std::cout << "test " << std::endl;        
+     //       glColor3f(1.0f, 1.0f, 1.0f); 
+   //         glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
+   
+///            glVertex3f(0.0f, 0.0f, 0.0f);         
            // glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
 
         }
     }
 
-    glEnd();
+    //glEnd();
 }
 
 //****************************************************
@@ -440,14 +457,19 @@ void testBezPatch() {
 
 void testDisplayControlPoints() {
     
+    std::cout << "Testing Drawing" << std::endl;
+
     BezPatch* patch;
 
     glBegin(GL_POINTS);
 
     for(int i = 0; i < 20; i++) {
         for(int j = 0; j < 20; j++) {
+            float x = (float)(i - 10) /10;
+            float y = (float)(j - 10) /10;
+            
             glColor3f(1.0f, 1.0f, 1.0f);
-            glVertex3f((i-10)/10, (j-10)/10, 1);
+            glVertex3f(x, y, -1);
         }
     }
     glEnd();
@@ -475,16 +497,39 @@ void testDisplayControlPoints() {
 
 // Function that does the actual drawing
 void myDisplay() {
+    if(debug) {
+        std::cout << "MY DISPLAY" << std::endl;
+    }
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
      
     // Make sure transformation is "zero'd"
     glLoadIdentity();
 
-    testDisplayControlPoints();
+  //  glBegin(GL_POINTS);
 
-    if(false) {
+    std::cout << "MY DISPLAY" << std::endl;
+
+    if(DRAW_TEST) {
+        testDisplayControlPoints();
+    }
+
+/*
+    for(int i = 0; i < numDiv ; i++) {
+        for(int j = 0; j < numDiv; j++) {
+            glColor3f(1.0f, 1.0f, 1.0f);
+            std::cout << "Points[0][0] = " << std::endl;
+            points[0][0].print();
+            glVertex3f(points[i][j].x, points[i][j].y, points[i][j].z);
+        }
+    }
+
+    glEnd();
+*/
+    if(debug) {
         for(int i = 0; i < numBezPatches; i++) {
-            uniformSubdividePatch(bezPatches[i], subdivParam);
+     //       uniformSubdividePatch(bezPatches[i], subdivParam);
+        
 
         }
     }
@@ -528,15 +573,26 @@ int main(int argc, char *argv[]) {
     if(debug) {
         testCommandArguments();
         testBezPatch();
+    }
+
+    numDiv = (int)(1.0 + 0.001)/subdivParam;
+    Point points[numDiv][numDiv];
+
+    if(DRAW_TEST) {
         testDisplayControlPoints();
     }
 
-  
+/*
+    int count = 0;
+ 
+    // Add the points to the array 
     for (int i = 0; i < numBezPatches; i++) {
+    
+        std::cout << count << std::endl;
         uniformSubdividePatch(bezPatches[i], subdivParam);
-
+        count++;
     }
-  
+ */ 
     glutDisplayFunc(myDisplay);
     glutReshapeFunc(myReshape);
     glutKeyboardFunc(keyPress);
