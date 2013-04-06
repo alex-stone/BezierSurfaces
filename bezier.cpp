@@ -59,19 +59,6 @@ void initScene() {
 
 }
 
-// Function that does the actual drawing
-void myDisplay() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Make sure transformation is "zero'd"
-    glLoadIdentity();
-
-    // TODO: Add Transformations and Translations to be drawn 
-
-    glFlush();
-    glutSwapBuffers();
-}
-
 void myReshape(int w, int h) {
     viewport.w = w;
     viewport.h = h;
@@ -390,6 +377,23 @@ void testDisplayControlPoints() {
 
     glEnd();
 }
+
+// Function that does the actual drawing
+void myDisplay() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+     
+    // Make sure transformation is "zero'd"
+    glLoadIdentity();
+
+    if(debug) {
+        testDisplayControlPoints();
+    }
+     
+    // TODO: Add Transformations and Translations to be drawn 
+     
+    glFlush();
+    glutSwapBuffers();
+}   
 
 //****************************************************
 // Main Function
