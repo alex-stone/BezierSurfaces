@@ -61,7 +61,7 @@ void initScene() {
 
 // Function that does the actual drawing
 void myDisplay() {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Make sure transformation is "zero'd"
     glLoadIdentity();
@@ -109,7 +109,7 @@ void keyPress(unsigned char key, int x, int y) {
 
         break;
     case ' ':
-    
+        std::exit(1);
         break;
     }
 }
@@ -157,23 +157,23 @@ pair<Point,Point> bezCurveInterp(Point* curve, float u) {
 Point* getVcurvePoints(BezPatch patch, int n) {
     Point* curve[4];
  
-    curve[0] = patch.controlPoints[n][0];
-    curve[1] = patch.controlPoints[n][1];
-    curve[2] = patch.controlPoints[n][2];
-    curve[3] = patch.controlPoints[n][3];
+    curve[0] = patch.controlPts[n][0];
+    curve[1] = patch.controlPts[n][1];
+    curve[2] = patch.controlPts[n][2];
+    curve[3] = patch.controlPts[n][3];
 
-    return curve;
+    return *curve;
 }
 
 Point* getUcurvePoints(BezPatch patch, int n) {
     Point* curve[4];
 
-    curve[0] = patch.controlPoints[0][n];
-    curve[1] = patch.controlPoints[1][n];
-    curve[2] = patch.controlPoints[2][n];
-    curve[3] = patch.controlPoints[3][n];
+    curve[0] = patch.controlPts[0][n];
+    curve[1] = patch.controlPts[1][n];
+    curve[2] = patch.controlPts[2][n];
+    curve[3] = patch.controlPts[3][n];
     
-    return curve;
+    return *curve;
 }
 
 
@@ -222,6 +222,34 @@ pair<Point,Point> bezPatchInterp(BezPatch patch, float u, float v) {
 
 
 //****************************************************
+// uniformSubdividePatch - Uniform Subdivision
+//****************************************************
+void  uniformSubdividePatch(BezPatch patch, float step) {
+
+    std::pair <Point,Point> pointNormal;
+    float u, v;
+    float epsilon = 0.1;
+
+    // Compute # of subdivisions for ste size
+    float numDiv = (1.0 + epsilon) / step;
+
+    // For each Parametric Value of U:
+    for(int iu = 0; iu < numDiv; iu++) {
+        u = iu * step;
+    
+        // For each Parametric Value of V:
+        for(int iv = 0; iv < numDiv; iv++) {
+            v = iv * step;
+
+            // Evaluate Surface:
+            pointNormal = bezPatchInterp(patch, u, v);
+             
+
+        }
+    }
+}
+
+//****************************************************
 // loadBezPatches Function
 //	- First line is # of Patches (numBezPatches)
 //	- Reads that many patches into bezPatches
@@ -232,34 +260,34 @@ void initBezPatches(char* input) {
     // Check if file is good, then check # of patches.
     if(inpfile.good()) {
 
-	// First line is number of patches
-	inpfile >> numBezPatches;
+    	// First line is number of patches
+	    inpfile >> numBezPatches;
 		
-	// Create an Array of BezPatches
-	bezPatches = new BezPatch*[numBezPatches];	
+    	// Create an Array of BezPatches
+    	bezPatches = new BezPatch*[numBezPatches];	
 
-	// Iterate through the Patches
-	for(int numPatch = 0; numPatch < numBezPatches; numPatch++) {
+	    // Iterate through the Patches
+	    for(int numPatch = 0; numPatch < numBezPatches; numPatch++) {
 
-	    BezPatch* patch = new BezPatch();
+	        BezPatch* patch = new BezPatch();
 
-	    // Iterate through each Control Point in the Patch
-	    for(int i = 0; i < 4; i++) {
-		for(int j = 0; j < 4; j++) {
-		    float x,y,z;
-		    inpfile >> x;
-		    inpfile >> y;
-		    inpfile >> z; 
-		    
-		    Point* controlPt = new Point(x,y,z);
+	        // Iterate through each Control Point in the Patch
+	        for(int i = 0; i < 4; i++) {
+		        for(int j = 0; j < 4; j++) {
+		            float x,y,z;
+        		    inpfile >> x;
+	        	    inpfile >> y;
+		            inpfile >> z; 
+		     
+		            Point* controlPt = new Point(x,y,z);
 		
-		    // Add current Control Point into current Patch
-		    patch->controlPts[i][j] = controlPt;
-		}	
+		            // Add current Control Point into current Patch
+		            patch->controlPts[i][j] = controlPt;
+		        }	
+	        }
+	        // Add Patch to array of Bez Patches
+	        bezPatches[numPatch] = patch;
 	    }
-	    // Add Patch to array of Bez Patches
-	    bezPatches[numPatch] = patch;
-	}
     }
     inpfile.close();
 }
@@ -275,22 +303,22 @@ void initBezPatches(char* input) {
 //****************************************************
 void parseCommandArguments(int argc, char* argv[]) { 
     if(argc < 3 || argc > 5) {
-	std::cerr << "Incorrect # of Arguments. Required (1) Input File Name, (2) Subdivision Parameter. Optional Flags: '-a' for adaptive subdivision, '-debug' for Debug print statements" << std::endl;
-	std::exit(1);
+	    std::cerr << "Incorrect # of Arguments. Required (1) Input File Name, (2) Subdivision Parameter. Optional Flags: '-a' for adaptive subdivision, '-debug' for Debug print statements" << std::endl;
+	    std::exit(1);
     } else {
-	inputFile = argv[1];
-	subdivParam = atof(argv[2]);
-	debug = false;
+	    inputFile = argv[1];
+	    subdivParam = atof(argv[2]);
+	    debug = false;
     }
 
     if(argc == 4) {
         if(string(argv[3]) == "-a") {
-	    uniform = false;
-	    debug = false;
-	} else {
-	    if(string(argv[3]) == "-debug") {
-		uniform = true;
-		debug = true;
+	        uniform = false;
+	        debug = false;
+	    } else {
+	        if(string(argv[3]) == "-debug") {
+		        uniform = true;
+		        debug = true;
 	    } else {
 		std::cerr << "Incorrect Flags Parameter" << std::endl;
 		std::exit(1);
@@ -341,6 +369,28 @@ void testBezPatch() {
     }
 }
 
+void testDisplayControlPoints() {
+    glBegin(GL_POINTS);
+    
+    for(int i = 0; i < numBezPatches; i++) {
+        for(int j = 0; j < 4; j++) {
+            for(int k = 0; k < 4; k++) {
+                
+                BezPatch* patch = bezPatches[i];
+              
+                GLfloat r,g,b = 1.0f;
+                
+                glColor3f(r,g,b);
+                
+                glVertex3f(patch->controlPts[i][j]->x, patch->controlPts[i][j]->y, patch->controlPts[i][j]->z);
+
+            }
+        }
+    }
+
+    glEnd();
+}
+
 //****************************************************
 // Main Function
 //****************************************************
@@ -355,10 +405,7 @@ int main(int argc, char *argv[]) {
     // Initialize the Bez Patches from Input File
     initBezPatches(inputFile);
 
-    if(debug) {
-	testCommandArguments();
-    	testBezPatch();
-    }
+
 
     // Added GLUT_DEPTH for z-buffer
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
@@ -373,7 +420,15 @@ int main(int argc, char *argv[]) {
     glutCreateWindow("CS184 - AS3 Bezier Surfaces");
 
     initScene();
-    
+   
+    if(debug) {
+        testCommandArguments();
+        testBezPatch();
+        testDisplayControlPoints();
+    }
+
+   
+  
     glutDisplayFunc(myDisplay);
     glutReshapeFunc(myReshape);
     glutKeyboardFunc(keyPress);
