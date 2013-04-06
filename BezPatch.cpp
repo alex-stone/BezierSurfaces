@@ -6,7 +6,7 @@
 // BezPatch Class - Constructors
 //****************************************************
 BezPatch::BezPatch() {
-    Point tempPoint;    
+    Point* tempPoint;    
 
     for(int i = 0; i < 4; i++) {
 	for(int j = 0; j < 4; j++) {
@@ -22,11 +22,11 @@ BezPatch::BezPatch() {
 void BezPatch::print() {
     for(int i = 0; i < 4; i++) {
 	for(int j = 0; j < 4; j++) {
-	   controlPts[i][j].printInline();
+	   controlPts[i][j]->printInline();
+	   std::cout << "  ";
 	}
 	std::cout << std::endl;
     }
-
 }
 
 

@@ -40,7 +40,7 @@ class Viewport {
 // Global Variables 
 //****************************************************
 Viewport 	viewport;
-int		numBezPatches;
+int		    numBezPatches;
 BezPatch**	bezPatches;
 
 // Command Line Arguments
@@ -56,10 +56,17 @@ bool		debug;
 //****************************************************
 void initScene() {
     // TODO: /glutC/
+    if(debug) {
+        std::cout << "Function: initScene" << std::endl;
+    }
 
 }
 
 void myReshape(int w, int h) {
+    if(debug) {
+        std::cout << "Function: myReshape" << std::endl; 
+    }
+
     viewport.w = w;
     viewport.h = h;
 
@@ -211,13 +218,13 @@ pair<Point,Point> bezPatchInterp(BezPatch patch, float u, float v) {
 //****************************************************
 // uniformSubdividePatch - Uniform Subdivision
 //****************************************************
-void  uniformSubdividePatch(BezPatch patch, float step) {
+void uniformSubdividePatch(BezPatch patch, float step) {
 
     std::pair <Point,Point> pointNormal;
     float u, v;
     float epsilon = 0.1;
 
-    // Compute # of subdivisions for ste size
+    // Compute # of subdivisions for step size
     float numDiv = (1.0 + epsilon) / step;
 
     // For each Parametric Value of U:
@@ -306,20 +313,20 @@ void parseCommandArguments(int argc, char* argv[]) {
 	        if(string(argv[3]) == "-debug") {
 		        uniform = true;
 		        debug = true;
-	    } else {
-		std::cerr << "Incorrect Flags Parameter" << std::endl;
-		std::exit(1);
+	        } else {
+		        std::cerr << "Incorrect Flags Parameter" << std::endl;
+		        std::exit(1);
+	        }
 	    }
-	}
     }
     
     if(argc == 5) {
-	if(string(argv[3]) == "-a" && string(argv[4]) == "-debug") {
-	    uniform = false;
-	    debug = true;
-	} else {
-	    std::cerr << "Incorrect Flag Parameters" << std::endl;
-	}
+	    if(string(argv[3]) == "-a" && string(argv[4]) == "-debug") {
+	        uniform = false;
+	        debug = true;
+	    } else {
+	        std::cerr << "Incorrect Flag Parameters" << std::endl;
+	    }
     }
 }
 
@@ -369,7 +376,7 @@ void testDisplayControlPoints() {
                 
                 glColor3f(r,g,b);
                 
-                glVertex3f(patch->controlPts[i][j]->x, patch->controlPts[i][j]->y, patch->controlPts[i][j]->z);
+                glVertex3f(patch->controlPts[j][k]->x, patch->controlPts[j][k]->y, patch->controlPts[j][k]->z);
 
             }
         }
