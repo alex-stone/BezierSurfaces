@@ -21,6 +21,7 @@
 #include <math.h>
 #include "BezPatch.h"
 #include "Point.h"
+#include "Triangle.h"
 
 #define PI 3.14159265  // Should be used from mathlib
 inline float sqr(float x) { return x*x; }
@@ -56,7 +57,7 @@ const GLdouble FOV_Y = 45.0;
 const GLdouble Z_NEAR = 1.0;
 const GLdouble Z_FAR = 40.0;
 
-// OpenGL Drawing Variables:
+// OpenGL Transformation Variables:
 GLfloat theta;          // Angle on X-axis
 GLfloat phi;            // Angle on Y-Axis
 GLfloat xTranslate;
@@ -65,6 +66,11 @@ GLfloat zTranslate;
 const GLfloat TRANSLATE_INC = 0.05f;
 const GLfloat Z_TRANSLATE_INC = 0.2f;
 const GLfloat ROTATE_INC = 3.0f;
+
+// OpenGL Drawing Type Variables
+bool light;
+bool smooth;
+bool wire;
 
 // Debugging Variables
 const bool DRAW_TEST = true;
@@ -78,6 +84,10 @@ void initScene() {
     xTranslate = 0.0f;
     yTranslate = 0.0f;
     zTranslate = -15.0f;       // Set Based on size of Input
+
+    wire = false;
+    smooth = false;
+    
 
     glEnable(GL_DEPTH_TEST);
     glClearDepth(1.0f);
@@ -140,10 +150,16 @@ void keyPress(unsigned char key, int x, int y) {
    
     switch(key) {
         case 's':
-                
+            smooth = !smooth;
             break;
         case 'w':
-    
+            wire = !wire;
+            if(wire) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            } else {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+            }
             break;
         case '+':
             zTranslate += Z_TRANSLATE_INC;
@@ -245,7 +261,7 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
             //glBegin(GL_QUADS);
 
             glColor3f(normArray[i][j].x, normArray[i][j].y, normArray[i][j].z);
-            //glColor3f(1.0f, 1.0f, 1.0f);
+            
             glVertex3f(ptArray[i][j].x, ptArray[i][j].y, ptArray[i][j].z);
             glVertex3f(ptArray[i+1][j].x, ptArray[i+1][j].y, ptArray[i+1][j].z);
            // glVertex3f(ptArray[i][j+1].x, ptArray[i][j+1].y, ptArray[i][j+1].z);
@@ -256,47 +272,160 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
         glEnd();
     }
 
-    /*
-
-    // For each Parametric Value of U:      -1 because There is one fewer row of patches.
-    for(int iu = 0; iu < numDiv; iu++) {
-        u = iu * step;
-   
-        glBegin(GL_POINTS);
-    
-        // For each Parametric Value of V:
-        for(int iv = 0; iv < numDiv; iv++) {
-            v = iv * step;
-
-            // Evaluate Surface:
-            pointNormal = patch->bezPatchInterp(u, v);
-
-
-
-            glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
-   
-            glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
-            glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
-   
-        }
-
-        glEnd();
-    } */
-
     glEndList();
 
     return patchDrawList;
 }
 
+void subdivideTriangles(BezPatch* patch, float threshold, Triangle tri) {
+    
+    std::pair<Point,Point> x1, x2, x3, bezMid1, bezMid2, bezMid3;
+
+    // The 3 Points From the Vertices of the triangle
+    x1 = patch->bezPatchInterp(tri.pt1.x, tri.pt1.y);
+    x2 = patch->bezPatchInterp(tri.pt2.x, tri.pt2.y);
+    x3 = patch->bezPatchInterp(tri.pt3.x, tri.pt3.y);
+
+    // The 3 Points From the Midpoints of the Triangles
+    bezMid1 = patch->bezPatchInterp(tri.midPoint1.x, tri.midPoint1.y);
+    bezMid2 = patch->bezPatchInterp(tri.midPoint2.x, tri.midPoint2.y);
+    bezMid3 = patch->bezPatchInterp(tri.midPoint3.x, tri.midPoint3.y);
+
+    float dist1 = abs(x1.first.add(x2.first).scalarMultiply(-0.5).distTo(bezMid1.first));
+    float dist2 = abs(x1.first.add(x3.first).scalarMultiply(-0.5).distTo(bezMid2.first));
+    float dist3 = abs(x2.first.add(x3.first).scalarMultiply(-0.5).distTo(bezMid3.first));
+
+    std::cout << "dist1 = :" << dist1 << std::endl;
+    std::cout << "dist2 = :" << dist2 << std::endl;
+    std::cout << "dist3 = :" << dist3 << std::endl;
+
+    // The 3 Midpoint Tests used to determine how to split up triangle
+    bool test1 = dist1 < threshold;
+    bool test2 = dist2 < threshold;
+    bool test3 = dist3 < threshold;
+  
+    if(test1 && test2 && !test3) { 
+        
+        std::cout << "Subdivide Triangles - test3 fails" << std::endl;
+        Triangle tri1(tri.pt1, tri.midPoint2, tri.midPoint3);     
+        Triangle tri2(tri.pt1, tri.midPoint3, tri.pt3);
+        
+        subdivideTriangles(patch, threshold, tri1);
+        subdivideTriangles(patch, threshold, tri2);     
+    }
+     
+    if(test1 && !test2 && test3) {
+        
+        std::cout << "Subdivide Triangles - test2 fails" << std::endl;
+        Triangle tri1(tri.pt1, tri.midPoint2, tri.pt3);
+        Triangle tri2(tri.midPoint2, tri.pt2, tri.pt3);
+        
+        subdivideTriangles(patch, threshold, tri1);
+        subdivideTriangles(patch, threshold, tri2);    
+    } 
+   
+    if(!test1 && test2 && test3) {
+        
+        std::cout << "Subdivide Triangles - test1 fails" << std::endl;
+        Triangle tri1(tri.pt1, tri.pt2, tri.midPoint1);
+        Triangle tri2(tri.midPoint1, tri.pt2, tri.pt3); 
+        
+        subdivideTriangles(patch, threshold, tri1);
+        subdivideTriangles(patch, threshold, tri2);   
+    }
+   
+    if(test1 && !test2 && !test3) {
+        
+        std::cout << "Subdivide Triangles - test2 and test3" << std::endl;
+        Triangle tri1(tri.pt1, tri.midPoint3, tri.pt3);
+        Triangle tri2(tri.pt1, tri.midPoint2, tri.midPoint3);
+        Triangle tri3(tri.midPoint2, tri.pt2, tri.midPoint3);
+        
+        subdivideTriangles(patch, threshold, tri1);    
+        subdivideTriangles(patch, threshold, tri2);    
+        subdivideTriangles(patch, threshold, tri3);    
+    }
+
+    if(!test1 && test2 && !test3) {
+        
+        std::cout << "Subdivide Triangles - test1 and test3 fail" << std::endl;
+        Triangle tri1(tri.pt1, tri.pt2, tri.midPoint1);
+
+        Triangle tri2(tri.midPoint1, tri.midPoint3, tri.pt3);
+        Triangle tri3(tri.midPoint1, tri.pt2, tri.midPoint3);
+       
+        
+        subdivideTriangles(patch, threshold, tri1);    
+        subdivideTriangles(patch, threshold, tri2);    
+        subdivideTriangles(patch, threshold, tri3);    
+    }
+
+    if(!test1 && !test2 && test3) {
+        
+        std::cout << "Subdivide Triangles - test1 and test 2 fail" << std::endl;
+        Triangle tri1(tri.pt1, tri.midPoint2, tri.midPoint1); 
+        Triangle tri2(tri.midPoint2, tri.pt3, tri.midPoint1);
+        Triangle tri3(tri.midPoint2, tri.pt2, tri.pt3);
+        
+        subdivideTriangles(patch, threshold, tri1);
+        subdivideTriangles(patch, threshold, tri2);
+        subdivideTriangles(patch, threshold, tri3);        
+    }
+    
+    // All MidPoint Tests Fail
+    if(!test1 && !test2 && !test3) {
+
+       // std::cout << "Subdivide Triangles - All Tests fails" << std::endl;
+        Triangle tri1(tri.pt1, tri.midPoint2, tri.midPoint1);
+        Triangle tri2(tri.midPoint1, tri.midPoint3, tri.pt3);
+        Triangle tri3(tri.midPoint2, tri.pt2, tri.midPoint3);
+        Triangle tri4(tri.midPoint1, tri.midPoint2, tri.midPoint3);
+         
+        subdivideTriangles(patch, threshold, tri1);
+        subdivideTriangles(patch, threshold, tri2);
+        subdivideTriangles(patch, threshold, tri3);
+        subdivideTriangles(patch, threshold, tri4);
+    }
+
+    // All MidPoint Tests Pass - Draw the Triangle
+    if(test1 && test2 && test3) {
+        std::cout << "Drawing Triangle" << std::endl;
+        glBegin(GL_TRIANGLES);
+        
+        glNormal3f(x1.second.x, x1.second.y, x1.second.z);
+        glVertex3f(x1.first.x, x1.first.y, x1.first.z);
+        
+        glNormal3f(x2.second.x, x2.second.y, x2.second.z);
+        glVertex3f(x2.first.x, x2.first.y, x2.first.z);
+        
+        glNormal3f(x3.second.x, x3.second.y, x3.second.z);
+        glVertex3f(x3.first.x, x3.first.y, x3.first.z);
+        
+        glEnd(); 
+    }
+}
+
 //****************************************************
-// uniformSubdividePatch - Uniform Subdivision
+// adaptiveSubdividePatch - Adaptive Subdivision
 //      Return a Draw List for a given Patch
 //****************************************************
-
 GLuint adaptiveSubdividePatch(BezPatch* patch, float step) {
     
+    Triangle tri1(0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f);
+    Triangle tri2(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
 
-    return uniformSubdividePatch(patch, step);
+    GLuint patchDrawList = glGenLists(1);
+
+    glNewList(patchDrawList, GL_COMPILE);
+
+    std::cout << "Adaptive Subdivide Called" << std::endl;
+
+    subdivideTriangles(patch, step, tri1);
+    subdivideTriangles(patch, step, tri1);
+
+    glEndList();
+
+    return patchDrawList; 
 }
 
 //****************************************************
@@ -435,8 +564,15 @@ void testBezPatch() {
 }
 
 void testDrawPoints() {
+    std::pair <Point,Point> pointNormal;
+    float u, v;
+    float epsilon = 0.1;
+
+    // Compute # of subdivisions for step size
+    int numDiv = (int)((1.0 + epsilon) / subdivParam)+1;
 
     for(int a = 0; a < numBezPatches; a++) {
+        BezPatch* patch = bezPatches[a];
 
         GLuint patchDrawList = glGenLists(1);
 
@@ -445,13 +581,13 @@ void testDrawPoints() {
 
         // For each Parametric Value of U:      
         for(int iu = 0; iu < numDiv; iu++) {
-            u = iu * step;
+            u = iu * subdivParam;
    
             glBegin(GL_POINTS);
     
             // For each Parametric Value of V:
             for(int iv = 0; iv < numDiv; iv++) {
-                v = iv * step;
+                v = iv * subdivParam;
 
                 // Evaluate Surface:
                 pointNormal = patch->bezPatchInterp(u, v);

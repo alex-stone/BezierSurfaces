@@ -22,5 +22,7 @@ class Point {
     void print();
     void printInline();
 
+    float distTo(Point b);
+
 };
 #endif

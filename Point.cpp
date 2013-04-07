@@ -58,10 +58,15 @@ void Point::normalize() {
 
 void Point::print() {
     printf("(%3.3f, %3.3f, %3.3f)", this->x, this->y, this->z);
-   // std::cout << "(" << this->x << ", " << this->y << ", " << this->z << ")" << std::endl;
 }
 
 void Point::printInline() {
     printf("(%3.3f, %3.3f, %3.3f)", this->x, this->y, this->z);
-    //std::cout << "(" << this->x << ", " << this->y << ", " << this->z << ")";
 }
+
+float Point::distTo(Point b) { 
+    float dist = sqrt((b.x - this->x)*(b.x - this->x) + (b.y - this->y)*(b.y - this->y) + (b.z - this->z)*(b.z - this->z)); 
+   
+    return dist; 
+}
+
