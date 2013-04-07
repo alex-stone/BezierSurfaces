@@ -62,6 +62,8 @@ GLfloat phi;            // Angle on Y-Axis
 GLfloat xTranslate;
 GLfloat yTranslate;
 GLfloat zTranslate;
+const GLfloat TRANSLATE_INC = 0.05f;
+const GLfloat ROTATE_INC = 3.0f;
 
 // Debugging Variables
 const bool DRAW_TEST = true;
@@ -104,7 +106,8 @@ void myReshape(int w, int h) {
 
 // Function that does the actual drawing
 void myDisplay() {
-    
+    std::cout << "My Display Called" << std::endl;
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
      
     // Make sure transformation is "zero'd"
@@ -112,7 +115,9 @@ void myDisplay() {
 
     // Setting Up the Translations for Object 
     glTranslatef(xTranslate, yTranslate, zTranslate);
-
+    
+    glRotatef(theta, 1.0f, 0.0f, 0.0f);
+    glRotatef(phi, 0.0f, 1.0f, 0.0f);
 
     for(int i = 0; i < numBezPatches; i++) {
         glCallList(drawLists[i]);
@@ -141,15 +146,17 @@ void keyPress(unsigned char key, int x, int y) {
     
             break;
         case '+':
-        
+            zTranslate += TRANSLATE_INC;
             break;
         case '-':
-
+            zTranslate -= TRANSLATE_INC;
             break;
          case ' ':
             std::exit(1);
             break;
     }
+
+    myDisplay();
 }
 
 //****************************************************
@@ -163,21 +170,36 @@ void arrowKeyPress(int key, int x, int y) {
     switch(key) {
         case 100:       // Left Arrow
             if(shift) {
-                
+                xTranslate -= TRANSLATE_INC;
             } else {
-
+                phi -= ROTATE_INC;
             }
             break;
         case 101:       // Up Arrow 
-            
+            if(shift) {
+                yTranslate += TRANSLATE_INC;
+            } else {
+                theta += ROTATE_INC;
+            }
             break;
         case 102:       // Right Arrow 
-            
+            if(shift) {
+                xTranslate += TRANSLATE_INC;
+            } else {
+                phi += ROTATE_INC;
+            }
             break;
         case 103:       // Down Arrow 
-    
+            if(shift) {
+                yTranslate -= TRANSLATE_INC;
+            } else {
+                theta -= ROTATE_INC;
+            }
             break;
     }
+
+    myDisplay();
+
 }
 
 //****************************************************
