@@ -106,7 +106,6 @@ void myReshape(int w, int h) {
 
 // Function that does the actual drawing
 void myDisplay() {
-    std::cout << "My Display Called" << std::endl;
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
      
@@ -179,7 +178,7 @@ void arrowKeyPress(int key, int x, int y) {
             if(shift) {
                 yTranslate += TRANSLATE_INC;
             } else {
-                theta += ROTATE_INC;
+                theta -= ROTATE_INC;
             }
             break;
         case 102:       // Right Arrow 
@@ -193,7 +192,7 @@ void arrowKeyPress(int key, int x, int y) {
             if(shift) {
                 yTranslate -= TRANSLATE_INC;
             } else {
-                theta -= ROTATE_INC;
+                theta += ROTATE_INC;
             }
             break;
     }
