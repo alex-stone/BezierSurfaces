@@ -76,7 +76,6 @@ void initScene() {
     yTranslate = 0.0f;
     zTranslate = -15.0f;       // Set Based on size of Input
 
-
     glEnable(GL_DEPTH_TEST);
     glClearDepth(1.0f);
 
@@ -102,6 +101,26 @@ void myReshape(int w, int h) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); 
 }
+
+// Function that does the actual drawing
+void myDisplay() {
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+     
+    // Make sure transformation is "zero'd"
+    glLoadIdentity();
+
+    // Setting Up the Translations for Object 
+    glTranslatef(xTranslate, yTranslate, zTranslate);
+
+
+    for(int i = 0; i < numBezPatches; i++) {
+        glCallList(drawLists[i]);
+    }
+ 
+    glFlush();
+    glutSwapBuffers();
+}  
 
 //****************************************************
 // On keyPress:
@@ -162,133 +181,6 @@ void arrowKeyPress(int key, int x, int y) {
 }
 
 //****************************************************
-// BezCurveInterp Function: 
-//   - Given Control Points of a Bezier Curve, and a
-//        parametric value, return the curve point &
-//        derivative
-//   - Used pseudo-code from Professor O'Brien's 
-//        Slides:  Spring 2013 Lecture 12 - Surfaces
-//
-//****************************************************
-pair<Point,Point> bezCurveInterp(Point* curve, float u) {
-   
-    // The Return Value - Curve Point & Derivative
-    std::pair <Point,Point> pointDerivative;    
-
-    // Split each of the 3 segments to form two segments AB & AC
-    Point segmentA = curve[0].scalarMultiply(1.0 - u).add(curve[1].scalarMultiply(u));
-    Point segmentB = curve[1].scalarMultiply(1.0 - u).add(curve[2].scalarMultiply(u));
-    Point segmentC = curve[2].scalarMultiply(1.0 - u).add(curve[3].scalarMultiply(u));
-
-    // Split AB and BC to form new segment DE
-    Point segmentD = segmentA.scalarMultiply(1.0 - u).add(segmentB.scalarMultiply(u));
-    Point segmentE = segmentB.scalarMultiply(1.0 - u).add(segmentC.scalarMultiply(u));
-
-    // Pick the right point on DE, the point on the curve
-    pointDerivative.first = segmentD.scalarMultiply(1.0 - u).add(segmentE.scalarMultiply(u));
-
-    // Compute Derivative: (E - D) * 3
-    pointDerivative.second = segmentE.add(segmentD.scalarMultiply(-1.0)).scalarMultiply(3);
-
-    //std::cout << "(" << pointDerivative.first.x << ", " << pointDerivative.first.y << ", " << pointDerivative.first.z << ")" << std::endl;
-
-    return pointDerivative;
-}
-
-
-//****************************************************
-// BezPatchInterp Function:
-//   - Given a Control Patch and (u,v) values, find
-//      the surface point and normal
-//****************************************************
-pair<Point,Point> bezPatchInterp(BezPatch* patch, float u, float v) {
-    Point vcurve[4];
-    Point ucurve[4];
-    Point tempcurve[4];
-
-    std::pair <Point,Point> pointNormal;
-    std::pair <Point,Point> VptDeriv;
-    std::pair <Point,Point> UptDeriv;
-
-    // Build Control Points for Bezier Curve in V
-    
-    tempcurve[0] = *patch->controlPts[0][0];
-    tempcurve[1] = *patch->controlPts[0][1];
-    tempcurve[2] = *patch->controlPts[0][2];
-    tempcurve[3] = *patch->controlPts[0][3];
-    
-    vcurve[0] = bezCurveInterp(tempcurve, u).first;
-    
-    tempcurve[0] = *patch->controlPts[1][0];
-    tempcurve[1] = *patch->controlPts[1][1];
-    tempcurve[2] = *patch->controlPts[1][2];
-    tempcurve[3] = *patch->controlPts[1][3];
-    
-    vcurve[1] = bezCurveInterp(tempcurve, u).first;
-    
-    tempcurve[0] = *patch->controlPts[2][0];
-    tempcurve[1] = *patch->controlPts[2][1];
-    tempcurve[2] = *patch->controlPts[2][2];
-    tempcurve[3] = *patch->controlPts[2][3];
-
-    vcurve[2] = bezCurveInterp(tempcurve, u).first;
-    
-    tempcurve[0] = *patch->controlPts[3][0];
-    tempcurve[1] = *patch->controlPts[3][1];
-    tempcurve[2] = *patch->controlPts[3][2];
-    tempcurve[3] = *patch->controlPts[3][3];
-    
-    vcurve[3] = bezCurveInterp(tempcurve, u).first;
-
-    // Build Control Points for Bezier Curve in U
-
-    tempcurve[0] = *patch->controlPts[0][0];
-    tempcurve[1] = *patch->controlPts[1][0];
-    tempcurve[2] = *patch->controlPts[2][0];
-    tempcurve[3] = *patch->controlPts[3][0];
-
-    ucurve[0] = bezCurveInterp(tempcurve, v).first;
-    
-    tempcurve[0] = *patch->controlPts[0][1];
-    tempcurve[1] = *patch->controlPts[1][1];
-    tempcurve[2] = *patch->controlPts[2][1];
-    tempcurve[3] = *patch->controlPts[3][1];
-    
-    ucurve[1] = bezCurveInterp(tempcurve, v).first;
-    
-    tempcurve[0] = *patch->controlPts[0][2];
-    tempcurve[1] = *patch->controlPts[1][2];
-    tempcurve[2] = *patch->controlPts[2][2];
-    tempcurve[3] = *patch->controlPts[3][2];
-
-    ucurve[2] = bezCurveInterp(tempcurve, v).first;
-    
-    tempcurve[0] = *patch->controlPts[0][3];
-    tempcurve[1] = *patch->controlPts[1][3];
-    tempcurve[2] = *patch->controlPts[2][3];
-    tempcurve[3] = *patch->controlPts[3][3];
-    
-    ucurve[3] = bezCurveInterp(tempcurve, v).first;
-
-    // Evaluate Surface & Derivative for U & V
-    VptDeriv = bezCurveInterp(vcurve, v);
-    UptDeriv = bezCurveInterp(ucurve, u);
-
-    Point dPdv = VptDeriv.second;
-    Point dPdu = UptDeriv.second;
- 
-    // Take Cross Product of partials to find Normal:
-    Point normal = dPdu.cross(dPdv);
-    normal.normalize();
-
-    pointNormal.first = VptDeriv.first;
-    pointNormal.second = normal;
-
-    return pointNormal;
-}
-
-
-//****************************************************
 // uniformSubdividePatch - Uniform Subdivision
 //      Return a Draw List for a given Patch
 //****************************************************
@@ -303,7 +195,6 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
     // Compute # of subdivisions for step size
     int numDiv = (int)((1.0 + epsilon) / step);
 
-
     glNewList(patchDrawList, GL_COMPILE);
 
     // For each Parametric Value of U:      -1 because There is one fewer row of patches.
@@ -317,7 +208,7 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
             v = iv * step;
 
             // Evaluate Surface:
-            pointNormal = bezPatchInterp(patch, u, v);
+            pointNormal = patch->bezPatchInterp(u, v);
             glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
    
             glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
@@ -327,7 +218,6 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
 
         glEnd();
     }
-
 
     glEndList();
 
@@ -345,7 +235,6 @@ GLuint adaptiveSubdividePatch(BezPatch* patch, float step) {
     return uniformSubdividePatch(patch, step);
 }
 
-
 //****************************************************
 // makeDrawLists
 //      - Create the drawlists from the patches using
@@ -360,7 +249,6 @@ void makeDrawLists() {
         }
     }
 }
-
 
 //****************************************************
 // loadBezPatches Function
@@ -482,29 +370,7 @@ void testBezPatch() {
     }
 }
 
-// Function that does the actual drawing
-void myDisplay() {
-    
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-     
-    // Make sure transformation is "zero'd"
-    glLoadIdentity();
-
-    // Setting Up the Translations for Object 
-    glTranslatef(xTranslate, yTranslate, zTranslate);
-
-
-    for(int i = 0; i < numBezPatches; i++) {
-        glCallList(drawLists[i]);
-    }
-
-     
-    // TODO: Add Transformations and Translations to be drawn 
-     
-    glFlush();
-    glutSwapBuffers();
-}   
-
+ 
 //****************************************************
 // Main Function
 //****************************************************

@@ -15,7 +15,13 @@ class BezPatch {
     // Constructors
     BezPatch();		// Initialize all Control Points to (0,0,0)
 
-    // Functions
+    // General BezPatch Functions
     void print();
+
+    // Bez Curve Interpretation Functions
+    std::pair<Point,Point> bezCurveInterp(Point* curve, float u);
+ 	std::pair<Point,Point> bezCurveInterpFormPoints(bool vCurve, int numCurve, float u);
+    std::pair<Point,Point> bezPatchInterp(float u, float v);
+
 };
 #endif
