@@ -63,6 +63,7 @@ GLfloat xTranslate;
 GLfloat yTranslate;
 GLfloat zTranslate;
 const GLfloat TRANSLATE_INC = 0.05f;
+const GLfloat Z_TRANSLATE_INC = 0.2f;
 const GLfloat ROTATE_INC = 3.0f;
 
 // Debugging Variables
@@ -116,7 +117,7 @@ void myDisplay() {
     glTranslatef(xTranslate, yTranslate, zTranslate);
     
     glRotatef(theta, 1.0f, 0.0f, 0.0f);
-    glRotatef(phi, 0.0f, 1.0f, 0.0f);
+    glRotatef(phi, 0.0f, 0.0f, 1.0f);
 
     for(int i = 0; i < numBezPatches; i++) {
         glCallList(drawLists[i]);
@@ -145,10 +146,10 @@ void keyPress(unsigned char key, int x, int y) {
     
             break;
         case '+':
-            zTranslate += TRANSLATE_INC;
+            zTranslate += Z_TRANSLATE_INC;
             break;
         case '-':
-            zTranslate -= TRANSLATE_INC;
+            zTranslate -= Z_TRANSLATE_INC;
             break;
          case ' ':
             std::exit(1);
@@ -209,14 +210,53 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
 
     std::pair <Point,Point> pointNormal;
     float u, v;
-    float epsilon = 0.001;
+    float epsilon = 0.1;
+
+    // Compute # of subdivisions for step size
+    int numDiv = (int)((1.0 + epsilon) / step)+1;
+
+
+    Point ptArray[numDiv][numDiv];
+    Point normArray[numDiv][numDiv];
 
     GLuint patchDrawList = glGenLists(1);
 
-    // Compute # of subdivisions for step size
-    int numDiv = (int)((1.0 + epsilon) / step);
+    for(int iu = 0; iu < numDiv; iu++) {
+        u = iu * step;
+       
+        // For each Parametric Value of V:
+        for(int iv = 0; iv < numDiv; iv++) {
+            v = iv * step;
+
+            // Evaluate Surface:
+            pointNormal = patch->bezPatchInterp(u, v);
+
+            ptArray[iu][iv] = pointNormal.first;
+            normArray[iu][iv] = pointNormal.second;
+        }
+    }
 
     glNewList(patchDrawList, GL_COMPILE);
+
+
+    for(int i = 0; i < numDiv-1; i++) {
+        glBegin(GL_QUAD_STRIP);
+        for(int j = 0; j < numDiv; j++) {
+            //glBegin(GL_QUADS);
+
+            glColor3f(normArray[i][j].x, normArray[i][j].y, normArray[i][j].z);
+            //glColor3f(1.0f, 1.0f, 1.0f);
+            glVertex3f(ptArray[i][j].x, ptArray[i][j].y, ptArray[i][j].z);
+            glVertex3f(ptArray[i+1][j].x, ptArray[i+1][j].y, ptArray[i+1][j].z);
+           // glVertex3f(ptArray[i][j+1].x, ptArray[i][j+1].y, ptArray[i][j+1].z);
+           // glVertex3f(ptArray[i+1][j+1].x, ptArray[i+1][j+1].y, ptArray[i+1][j+1].z);
+
+            
+        }
+        glEnd();
+    }
+
+    /*
 
     // For each Parametric Value of U:      -1 because There is one fewer row of patches.
     for(int iu = 0; iu < numDiv; iu++) {
@@ -230,6 +270,9 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
 
             // Evaluate Surface:
             pointNormal = patch->bezPatchInterp(u, v);
+
+
+
             glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
    
             glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
@@ -238,7 +281,7 @@ GLuint uniformSubdividePatch(BezPatch* patch, float step) {
         }
 
         glEnd();
-    }
+    } */
 
     glEndList();
 
@@ -388,6 +431,44 @@ void testBezPatch() {
 	    std::cout << "BezPatch #" << i+1 << std::endl;
 	    bezPatches[i]->print();
 	    std::cout << std::endl;
+    }
+}
+
+void testDrawPoints() {
+
+    for(int a = 0; a < numBezPatches; a++) {
+
+        GLuint patchDrawList = glGenLists(1);
+
+        glNewList(patchDrawList, GL_COMPILE);
+
+
+        // For each Parametric Value of U:      
+        for(int iu = 0; iu < numDiv; iu++) {
+            u = iu * step;
+   
+            glBegin(GL_POINTS);
+    
+            // For each Parametric Value of V:
+            for(int iv = 0; iv < numDiv; iv++) {
+                v = iv * step;
+
+                // Evaluate Surface:
+                pointNormal = patch->bezPatchInterp(u, v);
+
+                glColor3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);
+   
+                glNormal3f(pointNormal.second.x, pointNormal.second.y, pointNormal.second.z);  
+                glVertex3f(pointNormal.first.x, pointNormal.first.y, pointNormal.first.z);
+   
+            }
+
+            glEnd();
+        }
+
+        glEndList();
+
+        drawLists[a] = patchDrawList;
     }
 }
 
